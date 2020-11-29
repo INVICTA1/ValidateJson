@@ -6,21 +6,20 @@ from jsonschema.exceptions import ValidationError
 
 path_json = 'event/'
 path_schema = 'schema/'
-result = 'answer_file/'
+result_folder = 'result/'
 
 
 def open_files_in_dir(path_dir):
     mass_files = []
     for root, dir, files in os.walk(path_dir):
         for file in files:
-            mass_files.append(path_dir + file)
+            mass_files.append([path_dir + file, file])
     return mass_files
 
 
-def write_answer(json_path, schema_path, isValid):
-    name = result + str(json_path).split('.')[0] + str(schema_path).split('.')[0]
-    with open(name, 'a') as answer:
-        answer.write(isValid)
+def write_to_file(file_path, content,method):
+    with open(file_path, method) as answer:
+        answer.write(content)
 
 
 def create_list_code_schema(path_schema_files):
@@ -37,19 +36,19 @@ def create_list_code_schema(path_schema_files):
 def validate_json_schema(path_json_files, schemas_list):
     for path_json_file in path_json_files:
         try:
-            with open(path_json_file) as json_file:
+            with open(path_json_file[0]) as json_file:
                 json_text = json.load(json_file)
                 for schema in schemas_list:
+                    name = result_folder + str(path_json_file[1]).split('.')[0] +'-'+ str(schema[1]).split('.')[
+                        0] + '.txt'
                     try:
-                        validate(instance=json_text, schema=schema)
-                        # write to success folder
-                        write_answer(path_json_file, schema_file, isValid)
+                        validate(instance=json_text, schema=schema[0])
+                        write_to_file('Success_file',str(path_json_file[1]) + ' and ' +  str(schema[1]),'a')
                     except BaseException as e:
-                        # write to wrong folder
-                        write_answer(path_json_file, schema_file,e)
+                        write_to_file(name, str(e),'w+')
 
-        except BaseException:
-            print('Json не открыается')
+        except BaseException as err:
+            write_to_file(result_folder+'file_not_open',str(path_json_file[1]),'a')
             continue
 
 
@@ -57,8 +56,7 @@ def main():
     try:
         path_json_files = open_files_in_dir(path_json)
         path_schema_files = open_files_in_dir(path_schema)
-        schema = create_list_code_schema(path_schema_files)
-        validate_json_schema(path_json_files, schema)
+        validate_json_schema(path_json_files, path_schema_files)
 
         #
         # with open(path) as json_file:
